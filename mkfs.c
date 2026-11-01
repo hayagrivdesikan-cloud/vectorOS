@@ -10,6 +10,7 @@
 #include "fs.h"
 #include "stat.h"
 #include "param.h"
+#include "effect.h"
 
 #ifndef static_assert
 #define static_assert(a, b) do { switch (0) case 0: case (a): ; } while (0)
@@ -18,12 +19,13 @@
 #define NINODES 200
 
 // Disk layout:
-// [ boot block | sb block | log | inode blocks | free bit map | data blocks ]
+// [ boot block | sb block | log | inode blocks | free bit map | effect table | data blocks ]
 
 int nbitmap = FSSIZE/(BSIZE*8) + 1;
 int ninodeblocks = NINODES / IPB + 1;
 int nlog = LOGSIZE;
-int nmeta;    // Number of meta blocks (boot, sb, nlog, inode, bitmap)
+int neffect = NEFFECTBLOCKS;
+int nmeta;    // Number of meta blocks (boot, sb, nlog, inode, bitmap, effect)
 int nblocks;  // Number of data blocks
 
 int fsfd;
@@ -91,7 +93,7 @@ main(int argc, char *argv[])
   }
 
   // 1 fs block = 1 disk sector
-  nmeta = 2 + nlog + ninodeblocks + nbitmap;
+  nmeta = 2 + nlog + ninodeblocks + nbitmap + neffect;
   nblocks = FSSIZE - nmeta;
 
   sb.size = xint(FSSIZE);
@@ -101,9 +103,11 @@ main(int argc, char *argv[])
   sb.logstart = xint(2);
   sb.inodestart = xint(2+nlog);
   sb.bmapstart = xint(2+nlog+ninodeblocks);
+  sb.effect_start = xint(2+nlog+ninodeblocks+nbitmap);
+  sb.neffect = xint(neffect);
 
-  printf("nmeta %d (boot, super, log blocks %u inode blocks %u, bitmap blocks %u) blocks %d total %d\n",
-         nmeta, nlog, ninodeblocks, nbitmap, nblocks, FSSIZE);
+  printf("nmeta %d (boot, super, log blocks %u inode blocks %u, bitmap blocks %u, effect blocks %u) blocks %d total %d\n",
+         nmeta, nlog, ninodeblocks, nbitmap, neffect, nblocks, FSSIZE);
 
   freeblock = nmeta;     // the first free block that we can allocate
 

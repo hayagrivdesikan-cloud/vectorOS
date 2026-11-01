@@ -180,9 +180,9 @@ iinit(int dev)
 
   readsb(dev, &sb);
   cprintf("sb: size %d nblocks %d ninodes %d nlog %d logstart %d\
- inodestart %d bmap start %d\n", sb.size, sb.nblocks,
+ inodestart %d bmap start %d effect_start %d neffect %d\n", sb.size, sb.nblocks,
           sb.ninodes, sb.nlog, sb.logstart, sb.inodestart,
-          sb.bmapstart);
+          sb.bmapstart, sb.effect_start, sb.neffect);
 }
 
 static struct inode* iget(uint dev, uint inum);

@@ -7,7 +7,7 @@
 
 // Disk layout:
 // [ boot block | super block | log | inode blocks |
-//                                          free bit map | data blocks]
+//                free bit map | effect table | data blocks]
 //
 // mkfs computes the super block and builds an initial file system. The
 // super block describes the disk layout:
@@ -19,6 +19,8 @@ struct superblock {
   uint logstart;     // Block number of first log block
   uint inodestart;   // Block number of first inode block
   uint bmapstart;    // Block number of first free map block
+  uint effect_start; // Block number of first effect-table block
+  uint neffect;      // Number of effect-table blocks
 };
 
 #define NDIRECT 12
