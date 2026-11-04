@@ -22,6 +22,14 @@ void            cprintf(char*, ...);
 void            consoleintr(int(*)(void));
 void            panic(char*) __attribute__((noreturn));
 
+// effect.c
+void            effectinit(int dev);
+void            key_lock(uint64 key);
+void            key_unlock(uint64 key);
+int             effect_lookup(uint64 key, int *res);
+int             effect_insert(uint64 key, int res);
+int             sys_effect(void);
+
 // exec.c
 int             exec(char*, char**);
 
@@ -52,6 +60,7 @@ struct inode*   nameiparent(char*, char*);
 int             readi(struct inode*, char*, uint, uint);
 void            stati(struct inode*, struct stat*);
 int             writei(struct inode*, char*, uint, uint);
+struct inode*   create(char*, short, short, short);
 
 // ide.c
 void            ideinit(void);

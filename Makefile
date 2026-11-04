@@ -1,6 +1,7 @@
 OBJS = \
 	bio.o\
 	console.o\
+	effect.o\
 	exec.o\
 	file.o\
 	fs.o\
@@ -156,7 +157,7 @@ _forktest: forktest.o $(ULIB)
 	$(LD) $(LDFLAGS) -N -e main -Ttext 0 -o _forktest forktest.o ulib.o usys.o
 	$(OBJDUMP) -S _forktest > forktest.asm
 
-mkfs: mkfs.c fs.h
+mkfs: mkfs.c fs.h effect.h
 	gcc -Werror -Wall -o mkfs mkfs.c
 
 # Prevent deletion of intermediate files, e.g. cat.o, after first build, so

@@ -407,6 +407,7 @@ forkret(void)
     first = 0;
     iinit(ROOTDEV);
     initlog(ROOTDEV);
+    effectinit(ROOTDEV);
   }
 
   // Return to "caller", actually trapret (see allocproc).
