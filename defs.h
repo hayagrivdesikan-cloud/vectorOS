@@ -29,6 +29,7 @@ void            key_unlock(uint64 key);
 int             effect_lookup(uint64 key, int *res);
 int             effect_insert(uint64 key, int res);
 int             sys_effect(void);
+int             sys_effect_smart(void);
 
 // exec.c
 int             exec(char*, char**);

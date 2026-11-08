@@ -234,3 +234,139 @@ sys_effect(void)
   return res;
 }
 
+/*
+ * =========================================================================
+ * Replay-Within-Window Protection: Key Derivation
+ * =========================================================================
+ *
+ * Guarantees:
+ *   Within the same WINDOW_TICKS interval (~1 second), from the same process
+ *   (same PID), an identical (op, path, payload) resubmission is detected
+ *   and suppressed without the caller needing to manage an idempotency key.
+ *   This protects against an AI agent or user-space program that double-fires
+ *   a tool call due to internal retry loops or confused model repetition
+ *   WHILE THE CALLING PROCESS IS STILL ALIVE.
+ *
+ * Does NOT Guarantee:
+ *   - Survival across process crashes or restarts: a restarted process gets
+ *     a new PID, which produces a different key by design.
+ *   - Survival across tick-bucket boundaries: once WINDOW_TICKS pass, the
+ *     time bucket rolls over and generates a new key.
+ *   Therefore, a true crash-and-retry after reboot is treated as a new effect.
+ *   Crash survival is strictly the responsibility of sys_effect, which relies
+ *   on the caller supplying an explicit idempotency key that survives crashes.
+ *
+ * Framing:
+ *   This is a zero-trust, zero-caller-cooperation replay guard that complements
+ *   sys_effect, but is explicitly not a substitute for crash idempotency.
+ * =========================================================================
+ */
+static uint64
+generate_replay_window_key(int op, const char *path, const char *buf, int n)
+{
+  uint64 hash = FNV_OFFSET_BASIS;
+  int pid = myproc()->pid;
+  acquire(&tickslock);
+  uint cur_ticks = ticks;
+  release(&tickslock);
+  uint bucket = cur_ticks / WINDOW_TICKS;
+  int i;
+  uchar *p;
+
+  // Hash op
+  p = (uchar*)&op;
+  for(i = 0; i < sizeof(op); i++){
+    hash ^= (uint64)p[i];
+    hash *= FNV_PRIME;
+  }
+
+  // Hash path
+  while(*path){
+    hash ^= (uint64)(uchar)(*path++);
+    hash *= FNV_PRIME;
+  }
+
+  // Hash payload bytes
+  if(buf && n > 0){
+    for(i = 0; i < n; i++){
+      hash ^= (uint64)(uchar)buf[i];
+      hash *= FNV_PRIME;
+    }
+  }
+
+  // Hash pid
+  p = (uchar*)&pid;
+  for(i = 0; i < sizeof(pid); i++){
+    hash ^= (uint64)p[i];
+    hash *= FNV_PRIME;
+  }
+
+  // Hash tick bucket
+  p = (uchar*)&bucket;
+  for(i = 0; i < sizeof(bucket); i++){
+    hash ^= (uint64)p[i];
+    hash *= FNV_PRIME;
+  }
+
+  // Fix #2: If hash is ever 0, map to 1 so it cannot match the free-slot sentinel
+  if(hash == 0)
+    hash = 1;
+
+  return hash;
+}
+
+// sys_effect_smart(op, path, buf, n)
+// Kernel-derived key with replay-within-window protection.
+int
+sys_effect_smart(void)
+{
+  int op, n, res;
+  char *path;
+  char *ubuf = 0;
+
+  if(argint(0, &op) < 0)
+    return -1;
+  if(argstr(1, &path) < 0)
+    return -1;
+  if(argint(3, &n) < 0)
+    return -1;
+
+  if(op != EFFECT_OP_CREATE && op != EFFECT_OP_APPEND)
+    return -1;
+
+  if(n < 0 || n > EFFECT_MAXDATA)
+    return -1;
+
+  if(op == EFFECT_OP_APPEND && n > 0){
+    if(argptr(2, &ubuf, n) < 0)
+      return -1;
+  }
+
+  // Derive replay-within-window key
+  uint64 key = generate_replay_window_key(op, path, ubuf, n);
+
+  key_lock(key);
+
+  begin_op();
+
+  if(effect_lookup(key, &res) == 0){
+    // Identical call within window from same process: return cached result
+    end_op();
+    key_unlock(key);
+    return res;
+  }
+
+  // Execute the side effect
+  res = do_effect(op, path, ubuf, n);
+
+  // Record in effect table (Fix #3: graceful return on full table)
+  if(effect_insert(key, res) < 0){
+    end_op();
+    key_unlock(key);
+    return -1;
+  }
+
+  end_op();
+  key_unlock(key);
+  return res;
+}

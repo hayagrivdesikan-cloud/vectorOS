@@ -24,6 +24,7 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 int effect(uint64, int, const char*, const void*, int);
+int effect_smart(int, const char*, const void*, int);
 
 // ulib.c
 int stat(const char*, struct stat*);
