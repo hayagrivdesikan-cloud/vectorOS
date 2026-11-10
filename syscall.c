@@ -104,6 +104,7 @@ extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_effect(void);
+extern int sys_crashat(void);
 extern int sys_effect_smart(void);
 
 static int (*syscalls[])(void) = {
@@ -129,6 +130,7 @@ static int (*syscalls[])(void) = {
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
 [SYS_effect]  sys_effect,
+[SYS_crashat] sys_crashat,
 [SYS_effect_smart] sys_effect_smart,
 };
 

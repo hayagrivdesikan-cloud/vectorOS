@@ -47,6 +47,9 @@ struct log {
 };
 struct log log;
 
+int crashpoint = 0;
+int writecount = 0;
+
 static void recover_from_log(void);
 static void commit();
 
@@ -195,6 +198,8 @@ commit()
   if (log.lh.n > 0) {
     write_log();     // Write modified blocks from cache to log
     write_head();    // Write header to disk -- the real commit
+    if(crashpoint && ++writecount >= crashpoint)
+      panic("crashat: injected crash");
     install_trans(); // Now install writes to home locations
     log.lh.n = 0;
     write_head();    // Erase the transaction from the log
@@ -219,6 +224,9 @@ log_write(struct buf *b)
     panic("too big a transaction");
   if (log.outstanding < 1)
     panic("log_write outside of trans");
+
+  if(crashpoint && ++writecount >= crashpoint)
+    panic("crashat: injected crash");
 
   acquire(&log.lock);
   for (i = 0; i < log.lh.n; i++) {
