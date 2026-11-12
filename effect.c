@@ -1,4 +1,4 @@
-// effect.c — On-disk effect table implementation for Project 4.
+// effect.c: On-disk effect table implementation for Project 4.
 //
 // Shared infrastructure for idempotent filesystem side-effects.
 // The effect table is an on-disk open-addressing hash table with linear

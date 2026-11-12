@@ -1,4 +1,4 @@
-// effecttest.c — User space test program for sys_effect and sys_crashat.
+// effecttest.c: User space test program for sys_effect and sys_crashat.
 
 #include "types.h"
 #include "stat.h"

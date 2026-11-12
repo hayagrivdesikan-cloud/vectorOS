@@ -1,4 +1,4 @@
-// effect.h — On-disk effect table for exactly-once syscalls across crashes.
+// effect.h: On-disk effect table for exactly-once syscalls across crashes.
 //
 // The effect table is a fixed-size, open-addressed hash table stored in
 // reserved blocks on disk.  Each entry records the (key, result) of a

@@ -1,4 +1,4 @@
-// effectsmarttest.c — User test for sys_effect_smart replay-within-window protection.
+// effectsmarttest.c: User test for sys_effect_smart replay-within-window protection.
 
 #include "types.h"
 #include "stat.h"
